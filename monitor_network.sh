@@ -27,7 +27,7 @@ function allssh ()
 
 echo -n "Run started at : "
 date
-allssh 'ssh root@192.168.5.1 lldpctl; for n in $(manage_ovs show_interfaces | grep 10000 | grep True |  cut -c -4); do echo "===== $n ====="; ssh root@192.168.5.1 ethtool -i $n; ssh root@192.168.5.1 ethtool -g $n; ssh root@192.168.5.1 ethtool -S $n | egrep "[tr]x_packets|[tr]x_bytes|rx_missed_errors|rx_no_buffer_count|[rt]x_flow_control"; done'
+allssh 'ssh root@192.168.5.1 lldpctl 2>/dev/null; for n in $(manage_ovs show_interfaces | grep 10000 | grep True |  cut -c -4); do echo -n "================= hostname: "; echo -n $(ssh root@192.168.5.1 hostname 2> /dev/null); echo ", $n ================="; ssh root@192.168.5.1 ethtool -i $n 2>/dev/null; ssh root@192.168.5.1 ethtool -g $n 2>/dev/null; ssh root@192.168.5.1 ethtool -S $n 2>/dev/null | egrep -v "vf[0-9]|veb|[tr]x_priority" | egrep "[tr]x_packets|[tr]x_bytes|rx_missed_errors|rx_no_buffer_count|[rt]x_flow_control|xon_[rt]x|xoff_[rt]x|[rt]x_size"; done'
 
 echo -n "Run finished at : "
 date
