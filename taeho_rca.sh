@@ -44,24 +44,6 @@ function is_esx()
 #NTNX-Log-2020-04-22-1350706189197693814-1587550616-PE-10.117.79.120/cvm_logs/log_collector.out.20190618-225829:I0618 22:58:29.834937 14707 cvmconfig.go:230] Ncc Version number 3.6.2
 #NTNX-Log-2020-04-22-1350706189197693814-1587550616-PE-10.117.79.120/cvm_logs/log_collector.out.20190618-225829:I0629 09:42:55.052053 12512 cvmconfig.go:297] Ncc Version number 3.7.1.2
 
-function ncc_version_number()
-{
-	VER=" "
-
-	# runtime not using 'bash' - use tmp file
-	# done < <(rg -z "Ncc Version number" -g "log_collector.out*" | grep -v "stopped searching binary file") - doesn't work if "sh ./taeho_rca.sh"
-	rg -z "Ncc Version number" -g "log_collector.out*" | grep -v "stopped searching binary file" > /tmp/ncc_vers.$$
-	while IFS= read -r line
-	do
-		A=`echo $line | sed -e 's/.*Ncc Version number //g'`
-		if [ "$A" != "$VER" ]; then
-			echo $line
-			VER=$A
-		fi
-	done < /tmp/ncc_vers.$$
-
-	rm -f /tmp/ncc_vers.$$
-}
 
 # unique_FRU: Reduce number of duplicate entries of:
 # ------
@@ -330,7 +312,7 @@ echo "#############################################"
 echo " NCC version check "
 echo " Output file will be generated in ~/tmp/$CASE_NUM folder"
 echo "#############################################"
-ncc_version_number																				| tee -a ~/tmp/$CASE_NUM/NCC_Ver.txt
+rg -z "Ncc Version number" -g "zeus*"															| tee -a ~/tmp/$CASE_NUM/NCC_Ver.txt
 sleep 2
 
 echo "#############################################"											| tee -a ~/tmp/$CASE_NUM/Disk_failure.txt
@@ -573,6 +555,18 @@ echo "#############################################"											| tee  -a ~/tmp/$
 sleep 2
 rg -z "notification=VmDeleteAudit"	-g "acropolis.out*"											| tee  -a ~/tmp/$CASE_NUM/VM_delete.txt
 
+echo "#############################################"											| tee  -a ~/tmp/$CASE_NUM/VM_unexpected_shutdown.txt
+echo "Unexpected VM shutdown"																	| tee  -a ~/tmp/$CASE_NUM/VM_unexpected_shutdown.txt
+echo "#############################################"											| tee  -a ~/tmp/$CASE_NUM/VM_unexpected_shutdown.txt
+sleep 2
+rg -z "has shutdown unexpectedly"	-g "acropolis.out*"											| tee  -a ~/tmp/$CASE_NUM/VM_unexpected_shutdown.txt
+
+echo "#############################################"											| tee  -a ~/tmp/$CASE_NUM/VM_powerstatus_change.txt
+echo "Unexpected VM power status change"														| tee  -a ~/tmp/$CASE_NUM/VM_powerstatus_change.txt
+echo "#############################################"											| tee  -a ~/tmp/$CASE_NUM/VM_powerstatus_change.txt
+sleep 2
+rg -z "VmPowerStateReconcileAudit"	-g "acropolis.out*"											| tee  -a ~/tmp/$CASE_NUM/VM_powerstatus_change.txt
+
 echo "#############################################"											| tee  -a ~/tmp/$CASE_NUM/pithos_svc_crash.txt
 echo "11. Pithos service crash - ENG-137628"													| tee  -a ~/tmp/$CASE_NUM/pithos_svc_crash.txt
 echo "#############################################"											| tee  -a ~/tmp/$CASE_NUM/pithos_svc_crash.txt
@@ -584,7 +578,7 @@ echo "12. File Descriptior Check - KB 3857 ENG-119268"											| tee  -a ~/tmp
 echo "#############################################"											| tee  -a ~/tmp/$CASE_NUM/file_desc.txt
 sleep 2
 rg -z "Resource temporarily unavailable"														| tee  -a ~/tmp/$CASE_NUM/file_desc.txt
-rg -z "[ssh] <defunct>"| wc -l																	| tee  -a ~/tmp/$CASE_NUM/file_desc.txt
+rg -z "[ssh] <defunct>" -g "top.*" | wc -l														| tee  -a ~/tmp/$CASE_NUM/file_desc.txt
 
 echo "#############################################"											| tee  -a ~/tmp/$CASE_NUM/frodo_svc_crash.txt
 echo "13. Stargate crashing due to AHV frodo service failure ONCALL-7326"						| tee  -a ~/tmp/$CASE_NUM/frodo_svc_crash.txt
@@ -844,11 +838,13 @@ echo "AHV .301 is fine since it has old FW"														| tee -a ~/tmp/$CASE_NU
 echo "###########################"																| tee -a ~/tmp/$CASE_NUM/DELL_NIC_FW_ENG296333.txt
 rg -z "Network Driver - version" -g "dmesg" | grep i40e											| tee -a ~/tmp/$CASE_NUM/DELL_NIC_FW_ENG296333.txt
 
-#echo "###########################"																| tee -a ~/tmp/$CASE_NUM/ENG-281158.txt
-#echo "AOS 5.11.2 local user delete issue"														| tee -a ~/tmp/$CASE_NUM/ENG-281158.txt
-#echo "Checking for ENG-281158 all local accounts removed"										| tee -a ~/tmp/$CASE_NUM/ENG-281158.txt
-#echo "###########################"																| tee -a ~/tmp/$CASE_NUM/ENG-281158.txt
-#rg -z "DELETE" -g "client_tracking.log*"														| tee -a ~/tmp/$CASE_NUM/ENG-281158.txt
+echo "###########################"																| tee -a ~/tmp/$CASE_NUM/AHV_unschedulable_ENG-166495.txt
+echo "Checking for ENG-166495 AHV host unschedulable	"										| tee -a ~/tmp/$CASE_NUM/AHV_unschedulable_ENG-166495.txt
+echo "Slow 1G network? stucked urgon tasks - vm migration/locality"								| tee -a ~/tmp/$CASE_NUM/AHV_unschedulable_ENG-166495.txt
+echo "ONCALL-8177, ONCALL-6918"																	| tee -a ~/tmp/$CASE_NUM/AHV_unschedulable_ENG-166495.txt
+echo "###########################"																| tee -a ~/tmp/$CASE_NUM/AHV_unschedulable_ENG-166495.txt
+rg -z "Could not find parcels" -g "acropolis.*" 												| tee -a ~/tmp/$CASE_NUM/AHV_unschedulable_ENG-166495.txt
+rg -z "locality_restored: false" -g "zeus_config.txt"											| tee -a ~/tmp/$CASE_NUM/AHV_unschedulable_ENG-166495.txt
 
 echo "###########################"																| tee -a ~/tmp/$CASE_NUM/ISB-106-2020.txt
 echo "Broadcom (LSI) SAS3008 Storage Controller Instability"									| tee -a ~/tmp/$CASE_NUM/ISB-106-2020.txt
@@ -864,12 +860,58 @@ echo "###########################"																| tee -a ~/tmp/$CASE_NUM/ISB-1
 rg -z "ergon_gen_task_tree_db failed with" -g "ergon.*"											| tee -a ~/tmp/$CASE_NUM/ISB-108-2020.txt
 rg -z "killed as a result of limit of" -g "messages*"	| grep -v "stopped searching binary file"	| tee -a ~/tmp/$CASE_NUM/ISB-108-2020.txt
 
-#echo "#############################################"
-#echo "21. FATAL log check $filter ."
-#echo "#############################################"
-#sleep 2
-#filter=F`(date '+%m%d')`
-#rg -z $filter .
+echo "#############################################"																| tee  -a ~/tmp/$CASE_NUM/memory_leak.txt
+echo "#ENG-239751 ssl_terminator memory leak" 																		| tee  -a ~/tmp/$CASE_NUM/memory_leak.txt
+echo "#############################################"																| tee  -a ~/tmp/$CASE_NUM/memory_leak.txt
+rg -z "/usr/bin/python2.7 -B /home/nutanix/bin/ssl_terminator" -g "top.INFO*" | awk '{print $7}'| grep g | sort -ur | tee  -a ~/tmp/$CASE_NUM/memory_leak.txt
+
+echo "#############################################"																| tee  -a ~/tmp/$CASE_NUM/memory_leak.txt
+echo "#ENG-119268 Reap all children created by health server(fix in ncc 3.10"										| tee  -a ~/tmp/$CASE_NUM/memory_leak.txt
+echo "#############################################"																| tee  -a ~/tmp/$CASE_NUM/memory_leak.txt
+rg -z "defunct" -g "top.INFO*" 	| cut -d ":" -f2,3 | awk '{print $1,$12,$13}'| sort -ur								| tee  -a ~/tmp/$CASE_NUM/memory_leak.txt
+
+echo "#############################################"																| tee  -a ~/tmp/$CASE_NUM/memory_leak.txt
+echo "#Stargate memory usage check" 																				| tee  -a ~/tmp/$CASE_NUM/memory_leak.txt
+echo "#############################################"																| tee  -a ~/tmp/$CASE_NUM/memory_leak.txt
+rg -z "/home/nutanix/bin/stargate -stargate_enable_self_monitoring=true" -g "top.INFO*" | awk '{print $7}' | grep g | sort -ur | tee  -a ~/tmp/$CASE_NUM/memory_leak.txt
+
+echo "#############################################"																| tee  -a ~/tmp/$CASE_NUM/memory_leak.txt
+echo "#Curator memory usage check"																					| tee  -a ~/tmp/$CASE_NUM/memory_leak.txt
+echo "#############################################"																| tee  -a ~/tmp/$CASE_NUM/memory_leak.txt
+rg -z "/home/nutanix/bin/curator --curator_enable_self_monitoring=true" -g "top.INFO*" | awk '{print $7}' | grep g | sort -ur | tee  -a ~/tmp/$CASE_NUM/memory_leak.txt
+
+echo "#############################################"																| tee  -a ~/tmp/$CASE_NUM/memory_leak.txt
+echo "#Cassandra memory usage check" 																				| tee  -a ~/tmp/$CASE_NUM/memory_leak.txt
+echo "#############################################"																| tee  -a ~/tmp/$CASE_NUM/memory_leak.txt
+rg -z "ErrorFile=/home/nutanix/data/cores/cassandra_hs_err_pid" -g "top.INFO*" | awk '{print $7}' | grep g | sort -ur  | tee  -a ~/tmp/$CASE_NUM/memory_leak.txt
+
+echo "#############################################"																| tee  -a ~/tmp/$CASE_NUM/memory_leak.txt
+echo "ssh client memory leak https://jira.nutanix.com/browse/ENG-251443"											| tee  -a ~/tmp/$CASE_NUM/memory_leak.txt
+echo "#############################################"																| tee  -a ~/tmp/$CASE_NUM/memory_leak.txt
+rg -z "ssh -q -o CheckHostIp=no -o ConnectTimeout=15 -o StrictHostKeyChecking=no -o TCPKeepAlive=yes -o" -g "top.INFO*" | awk '{print $7}' | grep g | sort -ur | tee  -a ~/tmp/$CASE_NUM/memory_leak.txt
+
+echo "#############################################"																| tee  -a ~/tmp/$CASE_NUM/curator_scan.txt
+echo "Curator scan log"																								| tee  -a ~/tmp/$CASE_NUM/curator_scan.txt
+echo "#############################################"																| tee  -a ~/tmp/$CASE_NUM/curator_scan.txt
+rg -z "Scan\) started for reasons" -g "curator.*" 																	| tee  -a ~/tmp/$CASE_NUM/curator_scan.txt
+
+echo "#############################################"																| tee -a  ~/tmp/$CASE_NUM/cvm_memsize.txt
+echo "CVM memsize "																									| tee -a  ~/tmp/$CASE_NUM/cvm_memsize.txt
+echo "#############################################"																| tee -a  ~/tmp/$CASE_NUM/cvm_memsize.txt
+sleep 2
+rg -z "controller_vm_backplane_ip" -A2 -g "zeus_config.txt"															| tee -a  ~/tmp/$CASE_NUM/cvm_memsize.txt
+
+
+echo "#############################################"																| tee  -a ~/tmp/$CASE_NUM/thick_provision.txt
+echo "Thick provisioning/Reserved Capacity Container check"															| tee  -a ~/tmp/$CASE_NUM/thick_provision.txt
+echo "#############################################"																| tee  -a ~/tmp/$CASE_NUM/thick_provision.txt
+rg -z "has the correct implicit reserved capacity of" -g "curator.*" | grep -v "reserved capacity of 0 bytes"		| tee  -a ~/tmp/$CASE_NUM/thick_provision.txt
+
+echo "#############################################"																| tee  -a ~/tmp/$CASE_NUM/Nullified_vblock_ENG280325.txt
+echo "ENG-280325 Found nullified vblock entry for vblock"															| tee  -a ~/tmp/$CASE_NUM/Nullified_vblock_ENG280325.txt
+echo "#############################################"																| tee  -a ~/tmp/$CASE_NUM/Nullified_vblock_ENG280325.txt
+rg -z "Found nullified vblock entry for vblock" -g "stargate.*"                                                     | tee  -a ~/tmp/$CASE_NUM/Nullified_vblock_ENG280325.txt
+rg -z "Inserted HA route on host" -g "genesis.*"																	| tee  -a ~/tmp/$CASE_NUM/Nullified_vblock_ENG280325.txt
 
 echo "#############################################"
 echo "sharepath info for engineering"
