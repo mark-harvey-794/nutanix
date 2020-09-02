@@ -109,61 +109,6 @@ function unique_FRU()
 	rm -f /tmp/unique_fru.$$
 }
 
-# unique_BMC: Reduce frequency of static record
-# bmc info:
-# /ipmitool bmc info:
-# Device ID                 : 32
-# Device Revision           : 1
-# Firmware Revision         : 3.35
-# IPMI Version              : 2.0
-# Manufacturer ID           : 10876
-function unique_BMC()
-{
-	VER=""
-	STARTBLOCK=""
-	OK2PRINT=""
-
-	rg -z "bmc info" -A5 -g "hardware_info*" > /tmp/uniq_ipmi.$$
-
-	while IFS= read -r line
-	do
-
-		# start with 'ipmitool bmc info'
-		if [[ $line == *"ipmitool bmc info"* ]] && [ -z $STARTBLOCK ]; then
-			STARTBLOCK="Y"
-		fi
-
-		# We're OK to spit out the line
-		if [ ! -z $OK2PRINT ] && [ ! -z $STARTBLOCK ]; then
-			echo "$line"
-		fi
-
-		# Find Firmware first, set OK to print
-		if [[ $line == *"Firmware Revision"* ]] && [ ! -z $STARTBLOCK ]; then
-			A=`echo $line | sed -e 's/.*Firmware Revision.*: //g'`
-			# if a different serial number, reset the 'start block' flag
-			if [ "$A" != "$VER" ]; then
-				VER=$A
-				STARTBLOCK=""
-				OK2PRINT="Y"
-			fi
-		fi
-		# If 'start block' is set, and we encounter last line in block
-		# clear the OK2PRINT flag
-		if [ ! -z "$VER" ] && [ ! -z ${STARTBLOCK} ]; then
-			if [[ $line == *"Manufacturer ID"* ]]; then   # Found end of block
-				OK2PRINT=""
-			fi
-		fi
-
-	done < /tmp/uniq_ipmi.$$
-
-	# Add space in output
-	echo ""
-
-	rm -f /tmp/uniq_ipmi.$$
-}
-
 # ######### main(): execution starts here #########
 
 echo "#############################################"
@@ -279,15 +224,7 @@ echo "#############################################"
 echo " BMC/BIOS version"
 echo " Output file will be generated in ~/tmp/$CASE_NUM folder"
 echo "#############################################"
-# rg -z "bmc info" -A5 -g "hardware_info*"														| tee -a  ~/tmp/$CASE_NUM/bmc_ver.txt
-unique_BMC																						| tee -a ~/tmp/$CASE_NUM/bmc_ver.txt
-if [ "X${ESX}" == "X0" ]; then
- rg -z "BIOS Information" -A2 -g "hardware_info*" | sort -u 									| tee -a  ~/tmp/$CASE_NUM/bios_ver.txt
-else
- # ESX hardware_info...
- rg -z "BIOS Info" -A3 -g "hardware_info*" | egrep "Version|Release" | sort -u					| tee -a  ~/tmp/$CASE_NUM/bios_ver.txt
-fi
-sleep 2
+rg -z "bmc info" -A5 -g "hardware_info*"														| tee -a  ~/tmp/$CASE_NUM/bmc_ver.txt
 
 echo "#############################################"
 echo " Hypervisor network error check "
@@ -437,10 +374,11 @@ rg -z "has been found dead" | grep -v "stopped searching binary file"							| te
 rg -z "Starting fixer op on extent group" -g "stargate"											| tee  -a ~/tmp/$CASE_NUM/Stargate_health.txt
 
 echo "#############################################"											| tee   -a ~/tmp/$CASE_NUM/revoke_token.txt
-echo "5. Token revoke failure"																	| tee   -a ~/tmp/$CASE_NUM/revoke_token.txt
+echo "5. Token revoke failure/success"															| tee   -a ~/tmp/$CASE_NUM/revoke_token.txt
 echo "#############################################"											| tee   -a ~/tmp/$CASE_NUM/revoke_token.txt
 sleep 2
-rg -z "Failed to revoke token from"																| tee   -a ~/tmp/$CASE_NUM/revoke_token.txt
+rg -z "Failed to revoke token from"	 -g "genesis.*"												| tee   -a ~/tmp/$CASE_NUM/revoke_token.txt
+rg -z "revoking shutdown token" -g "genesis.*"													| tee   -a ~/tmp/$CASE_NUM/revoke_token.txt
 
 echo "#############################################"											| tee   -a ~/tmp/$CASE_NUM/scsi_controller.txt
 echo "6. scsi controller timeout"																| tee   -a ~/tmp/$CASE_NUM/scsi_controller.txt
@@ -492,6 +430,13 @@ echo "# zk defect possibley hitting ENG-160764"													| tee   -a ~/tmp/$CA
 echo "#############################################"											| tee   -a ~/tmp/$CASE_NUM/zk_check.txt
 rg -z "Notification time out: 400" -g "zookeeper.out" | wc -l 									| tee   -a ~/tmp/$CASE_NUM/zk_check.txt
 
+echo "#############################################"											| tee   -a ~/tmp/$CASE_NUM/zk_mig_check.txt
+echo "# zk migration history check       "													    | tee   -a ~/tmp/$CASE_NUM/zk_mig_check.txt
+echo "#############################################"											| tee   -a ~/tmp/$CASE_NUM/zk_mig_check.txt
+rg -z "Zookeeper migration source obtained" -g "zookeeper_monitor.INFO*"						| tee   -a ~/tmp/$CASE_NUM/zk_mig_check.txt
+rg -z "Zookeeper migration target obtained" -g "zookeeper_monitor.INFO*"						| tee   -a ~/tmp/$CASE_NUM/zk_mig_check.txt
+rg -z "zkserver_config" -A4 -g "edit-zkmigration-state.txt"										| tee   -a ~/tmp/$CASE_NUM/zk_mig_check.txt
+
 echo "###########################" 																| tee -a ~/tmp/$CASE_NUM/metadata_detach.txt
 echo "metadata node detach task start/end"   													| tee -a ~/tmp/$CASE_NUM/metadata_detach.txt
 echo "###########################" 																| tee -a ~/tmp/$CASE_NUM/metadata_detach.txt
@@ -528,6 +473,11 @@ echo "#############################################"											| tee  -a ~/tmp/$
 echo "Maintenance mode check			      	   "											| tee  -a ~/tmp/$CASE_NUM/genesis.txt
 echo "#############################################"											| tee  -a ~/tmp/$CASE_NUM/genesis.txt
 rg -z "Services are currently stopped on this node"	-g "genesis*"								| tee  -a ~/tmp/$CASE_NUM/genesis.txt
+
+echo "#############################################"											| tee  -a ~/tmp/$CASE_NUM/genesis.txt
+echo "put into wrong chassis slot check			   "											| tee  -a ~/tmp/$CASE_NUM/genesis.txt
+echo "#############################################"											| tee  -a ~/tmp/$CASE_NUM/genesis.txt
+rg -z "Duplicate management_server_list management_server_name"	-g "genesis*"					| tee  -a ~/tmp/$CASE_NUM/genesis.txt
 
 echo "#############################################"											| tee  -a ~/tmp/$CASE_NUM/curator_scan_failure.txt
 echo "9. Curator Scan Failure potentially network issue"										| tee  -a ~/tmp/$CASE_NUM/curator_scan_failure.txt
