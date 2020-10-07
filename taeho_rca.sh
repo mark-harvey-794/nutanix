@@ -644,7 +644,6 @@ echo "Displays Acropolis crash events."															| tee  -a ~/tmp/$CASE_NUM/
 echo "###########################"																| tee  -a ~/tmp/$CASE_NUM/acropolis_check.txt
 rg -z  "Could not find parcels for VM" -g "acroplos.out*"										| tee  -a ~/tmp/$CASE_NUM/acropolis_check.txt
 
-
 echo "###########################"																| tee  -a ~/tmp/$CASE_NUM/acropolis_ha.txt
 echo "Acropolis HA start history."																| tee  -a ~/tmp/$CASE_NUM/acropolis_ha.txt
 echo "###########################"																| tee  -a ~/tmp/$CASE_NUM/acropolis_ha.txt
@@ -659,6 +658,22 @@ echo "###########################"																| tee  -a ~/tmp/$CASE_NUM/acro
 echo "Acropolis host out of maintenance."														| tee  -a ~/tmp/$CASE_NUM/acropolis_ha.txt
 echo "###########################"																| tee  -a ~/tmp/$CASE_NUM/acropolis_ha.txt
 rg -z  "out of maintenance mode" -g "acroplos.out*"												| tee  -a ~/tmp/$CASE_NUM/acropolis_ha.txt
+
+echo "###########################"																| tee  -a ~/tmp/$CASE_NUM/acropolis_node_failure.txt
+echo "Acropolis host failure event ."														    | tee  -a ~/tmp/$CASE_NUM/acropolis_node_failure.txt
+echo "###########################"																| tee  -a ~/tmp/$CASE_NUM/acropolis_node_failure.txt
+rg -z  "notification=NodeFailure service_vm_id=" -g "acroplos.out*"								| tee  -a ~/tmp/$CASE_NUM/acropolis_node_failure.txt
+
+echo "###########################"																| tee  -a ~/tmp/$CASE_NUM/acropolis_node_failure.txt
+echo "Acropolis host connect event ."														    | tee  -a ~/tmp/$CASE_NUM/acropolis_node_failure.txt
+echo "###########################"																| tee  -a ~/tmp/$CASE_NUM/acropolis_node_failure.txt
+rg -z  "Connecting to " -g "acroplos.out*"								                        | tee  -a ~/tmp/$CASE_NUM/acropolis_node_failure.txt
+rg -z  "Connected to " -g "acroplos.out*"								                        | tee  -a ~/tmp/$CASE_NUM/acropolis_node_failure.txt
+
+echo "###########################"																| tee  -a ~/tmp/$CASE_NUM/acropolis_node_failure.txt
+echo "Acropolis host Reconcillation finished ."												    | tee  -a ~/tmp/$CASE_NUM/acropolis_node_failure.txt
+echo "###########################"																| tee  -a ~/tmp/$CASE_NUM/acropolis_node_failure.txt
+rg -z  "Time to fire reconcilliation for " -g "acroplos.out*"								    | tee  -a ~/tmp/$CASE_NUM/acropolis_node_failure.txt
 
 echo "###########################"																| tee  -a ~/tmp/$CASE_NUM/acropolis_check.txt
 echo "Displays Acropolis crash events."															| tee  -a ~/tmp/$CASE_NUM/acropolis_check.txt
@@ -796,6 +811,14 @@ echo "###########################"																| tee -a ~/tmp/$CASE_NUM/AHV_u
 rg -z "Could not find parcels" -g "acropolis.*" 												| tee -a ~/tmp/$CASE_NUM/AHV_unschedulable_ENG-166495.txt
 rg -z "locality_restored: false" -g "zeus_config.txt"											| tee -a ~/tmp/$CASE_NUM/AHV_unschedulable_ENG-166495.txt
 
+echo "###########################"																| tee -a ~/tmp/$CASE_NUM/ESXi_onetime_pass_memleak.txt
+echo "Checking for ENG-333729(ENG-172411) ESXi host hung with memory leak"						| tee -a ~/tmp/$CASE_NUM/ESXi_onetime_pass_memleak.txt
+echo "###########################"																| tee -a ~/tmp/$CASE_NUM/ESXi_onetime_pass_memleak.txt
+rg -z "Could not get one-time password" -g "hyperint.log*" 										| tee -a ~/tmp/$CASE_NUM/ESXi_onetime_pass_memleak.txt
+rg -z "Failed to parse ESX one time ticket." -g "uhura.*" | wc -l								| tee -a ~/tmp/$CASE_NUM/ESXi_onetime_pass_memleak.txt
+rg -z "Failed to parse ESX one time ticket." -g "uhura.*" | head -5								| tee -a ~/tmp/$CASE_NUM/ESXi_onetime_pass_memleak.txt
+rg -z "Failed to parse ESX one time ticket." -g "uhura.*" | tail -5								| tee -a ~/tmp/$CASE_NUM/ESXi_onetime_pass_memleak.txt
+
 echo "###########################"																| tee -a ~/tmp/$CASE_NUM/ISB-106-2020.txt
 echo "Broadcom (LSI) SAS3008 Storage Controller Instability"									| tee -a ~/tmp/$CASE_NUM/ISB-106-2020.txt
 echo "version PH16.00.01.00 is problematic."													| tee -a ~/tmp/$CASE_NUM/ISB-106-2020.txt
@@ -850,7 +873,6 @@ echo "CVM memsize "																									| tee -a  ~/tmp/$CASE_NUM/cvm_memsiz
 echo "#############################################"																| tee -a  ~/tmp/$CASE_NUM/cvm_memsize.txt
 sleep 2
 rg -z "controller_vm_backplane_ip" -A2 -g "zeus_config.txt"															| tee -a  ~/tmp/$CASE_NUM/cvm_memsize.txt
-
 
 echo "#############################################"																| tee  -a ~/tmp/$CASE_NUM/thick_provision.txt
 echo "Thick provisioning/Reserved Capacity Container check"															| tee  -a ~/tmp/$CASE_NUM/thick_provision.txt
